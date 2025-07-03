@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project Board</title>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Patrick Hand', cursive;
+      background: #f9f9f5;
+      color: #333;
+    }
+
+    .navbar {
+      position: fixed; top: 0; left: 0; width: 100%;
+      background: #fff;
+      border-bottom: 3px dashed #333;
+      color: #333;
+      padding: 15px 30px;
+      display: flex; justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      z-index: 1000;
+    }
+
+    .navbar h2 {
+      font-size: 24px;
+      letter-spacing: 1px;
+    }
+
+    .navbar .actions {
+      display: flex; gap: 12px;
+    }
+
+    .navbar button {
+      font-family: inherit;
+      padding: 8px 14px;
+      background: #fff;
+      border: 2px dashed #333;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .navbar button:hover {
+      background: #f0f0f0;
+      transform: translateY(-2px);
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 100px auto 40px;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .section {
+      background: #fff;
+      border: 2px dashed #333;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 4px 4px 0 #333;
+    }
+
+    .section h2 {
+      margin-bottom: 15px;
+      font-size: 22px;
+    }
+
+    .form-group {
+      display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;
+    }
+
+    input, textarea {
+      font-family: inherit;
+      padding: 10px; border: 2px dashed #333; border-radius: 6px;
+      background: #fafafa;
+    }
+
+    .section button {
+      font-family: inherit;
+      padding: 8px 14px;
+      background: #fff;
+      border: 2px dashed #333;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .section button:hover {
+      background: #f0f0f0;
+      transform: translateY(-2px);
+    }
+
+    ul { list-style: none; padding-left: 0; }
+    li {
+      background: #fff;
+      border: 2px dashed #333;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 3px 3px 0 #333;
+    }
+
+    .progress-bar {
+      background: #eee;
+      border: 2px dashed #333;
+      height: 20px; border-radius: 10px; overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: #facc15;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    .member-list li {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .remove-btn {
+      cursor: pointer;
+      color: #b91c1c;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+
+    @media(max-width:768px) {
+      .grid-container { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <h2>📝 Project Board</h2>
+  <div class="actions">
+    <button onclick="goDashboard()">🏠 Dashboard</button>
+    <button onclick="logout()">🚪 Logout</button>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 id="projectTitle">Project Title</h1>
+
+  <div class="grid-container">
+    <div class="section">
+      <h2>Progress</h2>
+      <div class="progress-bar">
+        <div id="progressFill" class="progress-bar-fill"></div>
+      </div>
+      <p id="progressText">0% complete</p>
+    </div>
+
+    <div class="section">
+      <h2>Tasks</h2>
+      <form id="taskForm" class="form-group">
+        <input type="text" id="taskTitle" placeholder="Task title" required/>
+        <input type="date" id="dueDate"/>
+        <button type="submit">Add Task</button>
+      </form>
+      <ul id="taskList"></ul>
+    </div>
+
+    <div class="section">
+      <h2>Comments</h2>
+      <form id="commentForm" class="form-group">
+        <textarea id="commentText" placeholder="Write a comment..."></textarea>
+        <button type="submit">Post</button>
+      </form>
+      <ul id="commentList"></ul>
+    </div>
+
+    <div class="section">
+      <h2>Project Members</h2>
+      <form id="memberForm" class="form-group">
+        <input type="email" id="memberEmail" placeholder="Member's email" required/>
+        <button type="submit">Add Member</button>
+      </form>
+      <p id="memberMsg"></p>
+      <ul id="memberList" class="member-list"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  const username = localStorage.getItem("username");
+  const userEmail = localStorage.getItem("userEmail");
+  if (!username || !userEmail) {
+    alert("Please login first.");
+    window.location.href = "login.html";
+  }
+
+  const projectId = new URLSearchParams(window.location.search).get('projectId');
+  let projectMembers = [];
+
+  function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
+  }
+
+  function goDashboard() {
+    window.location.href = "dashboard.html";
+  }
+
+  async function loadProject() {
+    const res = await fetch(`http://localhost:5000/api/projects/view/${projectId}`);
+    const data = await res.json();
+    document.getElementById("projectTitle").textContent = data.title;
+  }
+
+  async function loadTasks() {
+    const res = await fetch(`http://localhost:5000/api/tasks/${projectId}`);
+    const tasks = await res.json();
+    const list = document.getElementById("taskList");
+    list.innerHTML = "";
+    let completed = 0;
+
+    tasks.forEach(task => {
+      if (task.status === "Done") {
+        completed++;
+        return; // skip rendering
+      }
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>${task.title}</strong><br>
+        Assignee: ${task.assignee}<br>
+        Due: ${task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No due date"}<br>
+        Status: ${task.status}`;
+      list.appendChild(li);
+    });
+
+    const percent = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
+    document.getElementById("progressFill").style.width = percent + "%";
+    document.getElementById("progressText").textContent = `${percent}% complete`;
+  }
+
+  async function loadComments() {
+    const res = await fetch(`http://localhost:5000/api/comments/${projectId}`);
+    const comments = await res.json();
+    const list = document.getElementById("commentList");
+    list.innerHTML = "";
+    comments.forEach(c => {
+      const li = document.createElement("li");
+      li.textContent = `${c.user}: ${c.text}`;
+      list.appendChild(li);
+    });
+  }
+
+  function renderMembers() {
+    const list = document.getElementById("memberList");
+    list.innerHTML = "";
+    projectMembers.forEach(email => {
+      const li = document.createElement("li");
+      li.innerHTML = `${email} <span class="remove-btn" onclick="removeMember('${email}')">❌</span>`;
+      list.appendChild(li);
+    });
+  }
+
+  document.getElementById("memberForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("memberEmail").value;
+    const msg = document.getElementById("memberMsg");
+    msg.textContent = "Please wait...";
+
+    const res = await fetch("http://localhost:5000/api/projects/add-member", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, email })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      projectMembers.push(email);
+      renderMembers();
+      msg.textContent = "✅ Member added!";
+    } else {
+      msg.textContent = "❌ " + (data.message || "Could not add member.");
+    }
+
+    document.getElementById("memberForm").reset();
+  });
+
+  async function removeMember(email) {
+    await fetch("http://localhost:5000/api/projects/remove-member", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, email })
+    });
+
+    projectMembers = projectMembers.filter(e => e !== email);
+    renderMembers();
+  }
+
+  async function loadMembers() {
+    const res = await fetch(`http://localhost:5000/api/projects/members/${projectId}`);
+    projectMembers = await res.json();
+    renderMembers();
+  }
+
+  document.getElementById("taskForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const title = document.getElementById("taskTitle").value;
+    const dueDate = document.getElementById("dueDate").value;
+
+    await fetch("http://localhost:5000/api/tasks/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, dueDate, assigner: userEmail, projectId })
+    });
+
+    document.getElementById("taskForm").reset();
+    loadTasks();
+  });
+
+  document.getElementById("commentForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = document.getElementById("commentText").value;
+
+    await fetch("http://localhost:5000/api/comments/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, projectId, user: username })
+    });
+
+    document.getElementById("commentForm").reset();
+    loadComments();
+  });
+
+  window.addEventListener("focus", () => {
+    loadTasks();
+  });
+
+  loadProject();
+  loadTasks();
+  loadComments();
+  loadMembers();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create New Project</title>
+  <!-- ✅ Handwritten Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Patrick Hand', cursive;
+      background: #fdfdfd;
+      color: #333;
+      background-image: url('https://www.transparenttextures.com/patterns/sketchy.png');
+    }
+
+    .navbar {
+      background: #fff;
+      border-bottom: 3px dashed #333;
+      padding: 16px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .navbar h2 {
+      font-size: 24px;
+      letter-spacing: 1px;
+    }
+
+    .navbar .actions a {
+      background: #fff;
+      padding: 8px 14px;
+      text-decoration: none;
+      color: #333;
+      border-radius: 8px;
+      border: 2px dashed #333;
+      font-size: 14px;
+      font-family: inherit;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .navbar .actions a:hover {
+      background: #f0f0f0;
+      transform: translateY(-2px);
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 120px auto 40px;
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      border: 2px dashed #333;
+      box-shadow: 5px 5px 0 #333;
+    }
+
+    h1 {
+      margin-bottom: 25px;
+      font-size: 26px;
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    input[type="text"] {
+      padding: 12px;
+      border: 2px dashed #333;
+      border-radius: 8px;
+      font-size: 16px;
+      background: #fafafa;
+      font-family: inherit;
+    }
+
+    button {
+      padding: 12px;
+      background: #fff;
+      color: #333;
+      border: 2px dashed #333;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:hover {
+      background: #f0f0f0;
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        margin: 120px 20px;
+        padding: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <h2>📋 Project Manager</h2>
+    <div class="actions">
+      <a href="dashboard.html">⬅ Back to Dashboard</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>🗂️ Create New Project</h1>
+    <form id="createProjectForm">
+      <input type="text" id="projectTitle" placeholder="Enter project title..." required />
+      <button type="submit">➕ Create Project</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("createProjectForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = document.getElementById("projectTitle").value;
+      const userId = localStorage.getItem("userId");
+
+      if (!title || !userId) return alert("Missing project title or user not logged in!");
+
+      try {
+        const res = await fetch("http://localhost:5000/api/projects/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, userId })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert("✅ Project Created Successfully!");
+          window.location.href = "dashboard.html";
+        } else {
+          alert("❌ Error: " + (data.message || "Unknown error"));
+        }
+      } catch (err) {
+        console.error("❌ Error creating project:", err);
+        alert("Something went wrong while creating the project.");
+      }
+    });
+  </script>
+</body>
+</html>
